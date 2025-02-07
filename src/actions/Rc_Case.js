@@ -1,48 +1,40 @@
-import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
+/* eslint-disable no-undef */
+import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 export function useGetReceivecase() {
   const url = endpoints.dashboard.receivecaseJoin;
 
-  const [Rec, setRec] = useState([]); // เก็บข้อมูลที่ได้รับจาก API
-  const [isLoading, setIsLoading] = useState(false); // เก็บสถานะการโหลดข้อมูล
-  const [error, setError] = useState(null); // เก็บข้อมูลข้อผิดพลาด
-  const hasFetched = useRef(false); // ตรวจสอบว่าได้ทำการดึงข้อมูลแล้ว
+  const [Rec, setRec] = useState([]); // Data from API
+  const [isLoading, setIsLoading] = useState(false); // Loading state
+  // eslint-disable-next-line no-bitwise, no-self-compare
+  const [error, setError] = useState(null); // Error state
 
   const fetchReceivecase = useCallback(async () => {
-    if (hasFetched.current) return;
-    hasFetched.current = true;
-
-    setError(null);
     setIsLoading(true);
+    setError(null);
 
-    let attempts = 0; // ตัวแปรนับจำนวนรอบที่ยิง API
-    const maxRetries = 2; // ยิงซ้ำสูงสุด 2 รอบ
-
-    while (attempts <= maxRetries) {
+    const maxRetries = 2;
+    // eslint-disable-next-line no-plusplus
+    for (let attempts = 0; attempts <= maxRetries; attempts++) {
       try {
         console.log(`📌 Attempt ${attempts + 1}: Fetching data from`, url);
+
         // eslint-disable-next-line no-await-in-loop
         const response = await axiosInstance.get(url);
 
-        if (response.status === 200) {
-          if (response.headers['content-type'].includes('application/json')) {
-            console.log('📌 API Data:', response.data);
-            setRec(response.data); 
-            setIsLoading(false);
-            return;
-          }
-          throw new Error('Received non-JSON data');
-        } else {
-          throw new Error(`Error: ${response.status} - ${response.statusText}`);
+        if (response.status === 200 && response.headers['content-type'].includes('application/json')) {
+          console.log('📌 API Data:', response.data);
+          setRec(response.data);
+          setIsLoading(false);
+          return; // Successfully fetched, exit function
         }
+
+        throw new Error('Received non-JSON data');
       } catch (err) {
         console.error(`❌ Attempt ${attempts + 1} Failed:`, err.message);
-        // eslint-disable-next-line no-plusplus
-        attempts++;
-
-        if (attempts > maxRetries) {
+        if (attempts === maxRetries) {
           setError(err.message || 'An error occurred');
           setIsLoading(false);
         } else {
@@ -50,10 +42,11 @@ export function useGetReceivecase() {
         }
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url]);
 
   useEffect(() => {
-    fetchReceivecase(); // เรียกฟังก์ชันเพื่อดึงข้อมูล
+    fetchReceivecase(); // Fetch data on mount
   }, [fetchReceivecase]);
 
   const memoizedValue = useMemo(

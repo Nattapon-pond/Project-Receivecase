@@ -2,24 +2,16 @@
 import React from 'react';
 import { Icon } from '@iconify/react';
 
-import {
-  Box,
-  Card,
-  Grid,
-  Modal,
-  Button,
-  TextField,
-  Typography,
-  CardContent,
-} from '@mui/material';
+import { Box, Card, Grid, Modal, Button, TextField, Typography, CardContent } from '@mui/material';
 
 const EditactionModal = ({
   open,
   handleClose,
-  employee,
+  employees,
   files,
   handleInputChange,
   formDataUpdateEdit,
+  setFormDataUpdateEdit,
   handleFileChange,
   handleRemoveFile,
   handleInputEditChange,
@@ -49,13 +41,10 @@ const EditactionModal = ({
       }}
     >
       <Typography variant="h4" gutterBottom>
-        ดำเนินการเเก้ไข Case
+        รายละเอียดข้อมูล Case
       </Typography>
       <Card>
         <CardContent>
-          <Typography variant="h6" gutterBottom>
-            รายละเอียดข้อมูล Case
-          </Typography>
           <Grid container spacing={3}>
             {/* Section 1 */}
             <Grid item xs={12} md={8}>
@@ -66,8 +55,8 @@ const EditactionModal = ({
                       fullWidth
                       label="หมายเลขกรณี"
                       type="text"
-                      name="receive_case_id"
-                      value={formDataUpdateEdit?.receive_case_id || ''}
+                      name="receiveCaseId"
+                      value={formDataUpdateEdit?.receiveCaseId || ''}
                     />
                   </Box>
                 </Grid>
@@ -185,10 +174,8 @@ const EditactionModal = ({
                 </Grid>
               </Grid>
             </Grid>
-
-            {/* Section 2 */}
-            <Grid item xs={12} md={4}>
-              <Grid container spacing={3} direction="column">
+            <Grid item xs={12} md={4} >
+              <Grid container spacing={3} pt={2} direction="column">
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
@@ -200,15 +187,21 @@ const EditactionModal = ({
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
-                    value={
-                      // ค้นหาชื่อพนักงานที่ตรงกับ saev_em
-                      employee?.find((emp) => emp.employee_id === formDataUpdateEdit?.saev_em)
-                        ?.employee_name || ''
-                    } // ถ้าไม่พบชื่อพนักงานก็ให้แสดงเป็นค่าว่าง
                     label="พนักงานที่เข้าดำเนินการ"
                     variant="outlined"
+                    value={
+                      (employees ?? []).find(
+                        (emp) =>
+                          String(emp.employeeId).trim() ===
+                          String(formDataUpdateEdit?.saev_em).trim()
+                      )?.employeeName || 'ยังไม่มีพนักงาน'
+                    }
+                    InputProps={{
+                      readOnly: true, // ✅ ทำให้เป็น ReadOnly ป้องกันการแก้ไข
+                    }}
                   />
                 </Grid>
+
                 <Grid item xs={12} md={6}>
                   <Box
                     display="flex"
@@ -289,6 +282,7 @@ const EditactionModal = ({
                 </Grid>
               </Grid>
             </Grid>
+            {/* Section 2 */}
           </Grid>
           <Box display="flex" justifyContent="flex-end" mt={3}>
             <Button

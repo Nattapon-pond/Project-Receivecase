@@ -1,40 +1,53 @@
 'use client';
 
-// eslint-disable-next-line import/no-extraneous-dependencies
 import * as XLSX from 'xlsx';
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { saveAs } from 'file-saver';
 import React, { useState } from 'react';
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { Bar, XAxis, YAxis, Tooltip, BarChart, ResponsiveContainer } from 'recharts';
 
-import { Box, Card, Button, Select, MenuItem, Typography, Pagination, InputLabel, FormControl, CircularProgress } from '@mui/material';
+import {
+  Box,
+  Card,
+  Button,
+  Select,
+  MenuItem,
+  Typography,
+  Pagination,
+  InputLabel,
+  FormControl,
+  CircularProgress,
+} from '@mui/material';
 
-import { apiService } from 'src/services/apiService';// นำเข้า apiService
+import { CONFIG } from 'src/config-global';
+import { apiService } from 'src/services/apiService';
+
 import CaseTable from '../components/CaseTable';
 import { useCases } from '../../../utils/useCases';
 
 export default function ReceiveCaseHistoryPage() {
+  const baseURL = CONFIG.site.serverUrl;
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const { cases, chartData, loading, totalPages } = useCases(currentPage, selectedYear);
-  const [loadingExcel, setLoading] = useState(false);
+  const [loadingExcel, setLoadingExcel] = useState(false);
+
   const names = [
-    "",        // index 0 (ไม่ใช้งาน)
-    "Jockey",  // index 1
-    "Oat",     // index 2
-    "Poogun",  // index 3
-    "Kai",     // index 4
-    "Tent",    // index 5
-    "Pooh",    // index 6
-    "Nack",    // index 7
-    "Boy",     // index 8
-    "Kung",    // index 9
-    "Pai",     // index 10
-    "Jiw",     // index 11
-    "Title",   // index 12
-    "Aof",     // index 13
+    '', // index 0 (ไม่ใช้งาน)
+    'Jockey', // index 1
+    'Oat', // index 2
+    'Poogun', // index 3
+    'Kai', // index 4
+    'Tent', // index 5
+    'Pooh', // index 6
+    'Nack', // index 7
+    'Boy', // index 8
+    'Kung', // index 9
+    'Pai', // index 10
+    'Jiw', // index 11
+    'Title', // index 12
+    'Aof', // index 13
   ];
+
   const formatDateTime = (dateString) => {
     if (!dateString) return 'ไม่ระบุ';
     const date = new Date(dateString);
@@ -46,78 +59,125 @@ export default function ReceiveCaseHistoryPage() {
     const minutes = date.getMinutes().toString().padStart(2, '0');
     return `${day}/${month}/${year} ${hours}:${minutes}`;
   };
- const exportToExcel = async () => {
+
+  const exportToExcel = async () => {
     try {
-      setLoading(true);
-      const firstResponse = await apiService.get('/receive-case', {
-        params: { page: 1, limit: 10 },  // เรียกข้อมูลหน้าแรกก่อน
+      setLoadingExcel(true);
+
+      // Fetch the first page data
+      const firstResponse = await apiService.get('/receivecase/getreceivecase', {
+        params: { page: 1, limit: 10 },
       });
+      console.log('First response:', firstResponse.data);
+
       const pageCount = firstResponse.data.totalPages || 1;
       const pageRequests = [];
+
+      // Fetch all pages
       for (let page = 1; page <= pageCount; page += 1) {
         pageRequests.push(
-          apiService.get('/receive-case', { params: { page, limit: 10 } })
+          apiService.get('/receivecase/getreceivecase', { params: { page, limit: 10 } })
         );
       }
+
       const responses = await Promise.all(pageRequests);
-      const allCases = responses.flatMap(response => response.data.cases || []);
+      console.log('All responses:', responses);
+
+      const allCases = responses.flatMap((response) => {
+        if (response.data && response.data.result) {
+          return response.data.result; // Use 'result' instead of 'cases'
+        }
+        return []; // If no result, return empty array
+      });
+
+      console.log('All cases:', allCases);
+
       if (allCases.length === 0) {
-        alert("ไม่มีข้อมูลให้ส่งออก");
+        alert('ไม่มีข้อมูลให้ส่งออก');
         return;
       }
+
+      // Mapping the cases to the desired format for Excel export
       const excelData = allCases.map((row) => ({
-        'No.': row.receive_case_id,
-        'สาขา': row.branch_name,
-        'วันที่รับแจ้ง': formatDateTime(row.create_date),
-        'วันที่ดำเนินการ': formatDateTime(row.start_date),
-        'วันที่ดำเนินการสำเร็จ': formatDateTime(row.end_date),
-        'สถานะ': row.status_name,
-        'ความเร่งด่วน': row.level_urgent_name,
-        'ปัญหา': row.problem,
-        'พนักงานเข้าดำเนินการ': names[Number(row.saev_em)] || 'Unknown',
-        'แนวทางแก้ไข': row.correct,
-        'ประเภทปัญหา': row.main_case_name,
-        'ทีมที่รับผิดชอบ': row.team_name,
-        'พนักงานที่รับผิดชอบ': row.employee_name,
-        'ระยะเวลาดำเนินการ': row.start_date && row.end_date 
-          ? `${Math.floor((new Date(row.end_date) - new Date(row.start_date)) / (1000 * 60 * 60 * 24))} วัน`
-          : 'ไม่ระบุ',
+        'ID case.': row.receiveCaseId,
+        สาขา: row.branchName || 'ไม่ระบุ', // Ensure branch name is present
+        วันที่รับแจ้ง: formatDateTime(row.createDate),
+        วันที่เข้าดำเนินการ: formatDateTime(row.startDate),
+        วันที่ดำเนินการสำเร็จ: formatDateTime(row.endDate),
+        สถานะ: row.statusName || 'ไม่ระบุ', // Ensure status is present
+        ความเร่งด่วน: row.levelUrgentName || 'ไม่ระบุ', // Ensure urgency level is present
+        ปัญหา: row.problem,
+        พนักงานเข้าดำเนินการ: names[Number(row.saev_em)] || 'Unknown',
+        แนวทางแก้ไข: row.correct,
+        สาเหตุหลัก: row.mainCaseName,
+        ทีมที่รับผิดชอบ: row.teamName,
+        พนักงานที่รับผิดชอบ: row.employeeName,
+        ระยะเวลาดำเนินการ:
+          row.startDate && row.endDate
+            ? `${Math.floor((new Date(row.endDate) - new Date(row.startDate)) / (1000 * 60 * 60 * 24))} วัน`
+            : 'ไม่ระบุ',
       }));
+
+      console.log('Formatted Excel Data:', excelData);
+
+      // Generate Excel
       const worksheet = XLSX.utils.json_to_sheet(excelData);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Receive Case History');
-      const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array', cellStyles: true });
-      const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
+      const excelBuffer = XLSX.write(workbook, {
+        bookType: 'xlsx',
+        type: 'array',
+        cellStyles: true,
+      });
+      const data = new Blob([excelBuffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8',
+      });
       saveAs(data, 'receive_case_history.xlsx');
     } catch (error) {
       console.error('Error exporting data:', error);
-      alert("เกิดข้อผิดพลาดในการส่งออกข้อมูล");
+      alert('เกิดข้อผิดพลาดในการส่งออกข้อมูล');
     } finally {
-      setLoading(false);
+      setLoadingExcel(false);
     }
   };
-  
+
+  // Handle year change
+  const handleYearChange = (event) => {
+    setSelectedYear(event.target.value);
+    setCurrentPage(1); // Reset to the first page whenever the year changes
+  };
+
   return (
     <Box sx={{ padding: 4 }}>
-      <Typography variant="h5" gutterBottom>Receive Case History</Typography>
+      <Typography variant="h5" gutterBottom>
+        Receive Case History
+      </Typography>
+
+      {/* Year Selection */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <FormControl>
+        <FormControl sx={{ width: '150px' }}>
           <InputLabel>Year</InputLabel>
-          <Select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)}>
-            {[...Array(5)].map((_, i) => (
-              <MenuItem key={i} value={new Date().getFullYear() - i}>
-                {new Date().getFullYear() - i}
+          <Select value={selectedYear} onChange={handleYearChange}>
+            {/* Adjust the years here if needed */}
+            {[2020, 2021, 2022, 2023, 2024, 2025].map((year) => (
+              <MenuItem key={year} value={year}>
+                {year}
               </MenuItem>
             ))}
           </Select>
         </FormControl>
-      <Button variant="contained" color="primary" onClick={exportToExcel}>
-          Export to Excel
+
+        <Button variant="contained" color="primary" onClick={exportToExcel}>
+          {loadingExcel ? 'Exporting...' : 'Export to Excel'}
         </Button>
       </Box>
+
+      {/* Chart Display */}
       <Card sx={{ p: 3, mb: 3 }}>
         <Typography variant="h6">Receive Case History by Month</Typography>
-        {loading ? <CircularProgress /> : (
+        {loading ? (
+          <CircularProgress />
+        ) : chartData.length > 0 ? (
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={chartData}>
               <XAxis dataKey="month" />
@@ -127,11 +187,22 @@ export default function ReceiveCaseHistoryPage() {
               <Bar dataKey="pending" fill="#ff9800" />
             </BarChart>
           </ResponsiveContainer>
+        ) : (
+          <Typography variant="body1">No data available for this year.</Typography>
         )}
       </Card>
+
+      {/* Case Table */}
       <CaseTable cases={cases} totalPages={totalPages} setCurrentPage={setCurrentPage} />
+
+      {/* Pagination */}
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-        <Pagination count={totalPages} page={currentPage} onChange={(e, value) => setCurrentPage(value)} color="primary" />
+        <Pagination
+          count={totalPages}
+          page={currentPage}
+          onChange={(e, value) => setCurrentPage(value)}
+          color="primary"
+        />
       </Box>
     </Box>
   );

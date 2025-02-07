@@ -14,7 +14,7 @@ export async function getMainCase() {
     const data = await fetcher(endpoints.dashboard.main_case);
     console.log('Fetched Main Cases:', data);
 
-    return data?.result ?? []; 
+    return data?.result ?? [];
   } catch (error) {
     console.error('Error fetching main case:', error);
     throw error;
@@ -28,7 +28,7 @@ export async function getSubCaseTypes() {
 
     console.log('Fetched Data:', data);
 
-    const subCaseArray = data.body?.result ? JSON.parse(data.body.result) : [];
+    const subCaseArray = data?.result??[];
 
     return subCaseArray;
   } catch (error) {
@@ -41,6 +41,8 @@ export async function getSubCaseTypes() {
 export async function getbranchs() {
   try {
     const data = await fetcher(endpoints.dashboard.branches);
+    console.log('Fetched Data:', data);
+
     return data.result;
   } catch (error) {
     console.error('Error fetching sub case:', error);
@@ -53,6 +55,8 @@ export async function getbranchs() {
 export async function getlevelurgencies() {
   try {
     const data = await fetcher(endpoints.dashboard.levelurgencies);
+    console.log('Fetched Data:', data);
+
     return data.result;
   } catch (error) {
     console.error('Error fetching main case:', error);
@@ -65,6 +69,8 @@ export async function getlevelurgencies() {
 export async function get_employee() {
   try {
     const data = await fetcher(endpoints.dashboard.get_employee);
+    console.log('Fetched Data:', data);
+
     return data.result;
   } catch (error) {
     console.error('Error fetching employee:', error);
@@ -77,6 +83,8 @@ export async function get_employee() {
 export async function get_team() {
   try {
     const data = await fetcher(endpoints.dashboard.team);
+    console.log('Fetched Data:', data);
+
     return data.result;
   } catch (error) {
     console.error('Error fetching team:', error);
@@ -89,6 +97,9 @@ export async function get_team() {
 export async function get_status() {
   try {
     const data = await fetcher(endpoints.dashboard.status);
+    console.log('Fetched Data:', data.result);
+    
+
     return data.result;
   } catch (error) {
     console.error('Error fetching team:', error);

@@ -16,11 +16,15 @@ import {
 const TakeacitonModal = ({
   open,
   handleClose,
-  employee,
+  employees,
   status,
   formDataUpdate,
   handleInputChangeUpdate,
   handleUpdeteClick,
+  formDataUpdateEdit,
+  setFormDataUpdateEdit,
+  setFormDataUpdate,
+  unreadableData,
 }) => (
   <Modal open={open} onClose={handleClose}>
     <Box p={3} bgcolor="background.paper" maxWidth={600} mx="auto" mt={4} borderRadius={2}>
@@ -35,8 +39,8 @@ const TakeacitonModal = ({
             fullWidth
             label="หมายเลขกรณี"
             type="text"
-            name="receive_case_id"
-            value={formDataUpdate?.receive_case_id || ''}
+            name="receiveCaseId"
+            value={formDataUpdate?.receiveCaseId || ''}
             disabled
           />
         </Grid>
@@ -83,25 +87,32 @@ const TakeacitonModal = ({
           <Typography variant="subtitle1" fontWeight="bold">
             พนักงานที่เข้าดำเนินการ
           </Typography>
-          <TextField
-            select
-            value={formDataUpdate?.saev_em || ''}
-            name="saev_em"
-            onChange={handleInputChangeUpdate}
-            variant="outlined"
-            fullWidth
-            sx={{ mt: 1 }}
-          >
-            {employee?.length > 0 ? (
-              employee.map((option) => (
-                <MenuItem key={option.employee_id} value={option.employee_id}>
-                  {option.employee_name}
+
+          <FormControl fullWidth variant="outlined">
+            <Select
+              value={formDataUpdateEdit?.saev_em || ''}
+              onChange={(e) => {
+                const selectedEmployeeId = e.target.value;
+                console.log('Selected employee ID:', selectedEmployeeId);
+
+                setFormDataUpdateEdit({
+                  ...formDataUpdateEdit,
+                  saev_em: selectedEmployeeId,
+                });
+
+                setFormDataUpdate((prevState) => ({
+                  ...prevState,
+                  saev_em: selectedEmployeeId,
+                }));
+              }}
+            >
+              {employees?.map((emp) => (
+                <MenuItem key={emp.employeeId} value={emp.employeeId}>
+                  {emp.employeeName}
                 </MenuItem>
-              ))
-            ) : (
-              <MenuItem disabled>ไม่มีข้อมูล</MenuItem>
-            )}
-          </TextField>
+              ))}
+            </Select>
+          </FormControl>
         </Grid>
 
         {/* เลือกสถานะ */}
@@ -114,7 +125,7 @@ const TakeacitonModal = ({
               displayEmpty
               sx={{
                 borderRadius: '8px',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)', // เพิ่มความเงางาม
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
                 '& .MuiOutlinedInput-notchedOutline': {
                   borderColor: '#1976d2',
                 },
@@ -129,55 +140,65 @@ const TakeacitonModal = ({
               <MenuItem value="" disabled>
                 เลือกสถานะ
               </MenuItem>
-              {status?.map((statusItem) => (
-                <MenuItem
-                  key={statusItem.status_id}
-                  value={statusItem.status_id}
-                  disabled={
-                    (formDataUpdate?.status_name === 'รอดำเนินการ' &&
-                      statusItem.status_name !== 'กำลังดำเนินการ') ||
-                    (formDataUpdate?.status_name === 'กำลังดำเนินการ' &&
-                      statusItem.status_name !== 'ดำเนินการเสร็จสิ้น') ||
-                    formDataUpdate?.status_name === 'ดำเนินการเสร็จสิ้น'
-                  }
-                  sx={{
-                    backgroundColor:
-                      statusItem.status_name === 'กำลังดำเนินการ'
-                        ? '#FFEB3B' // พื้นหลังสีเหลืองเข้มขึ้น
-                        : statusItem.status_name === 'ดำเนินการเสร็จสิ้น'
-                          ? '#4CAF50' // พื้นหลังสีเขียวเข้ม
-                          : 'inherit',
-                    color:
-                      statusItem.status_name === 'กำลังดำเนินการ'
-                        ? '#FFA000'
-                        : statusItem.status_name === 'ดำเนินการเสร็จสิ้น'
-                          ? '#ffffff' // สีตัวอักษรขาว
-                          : 'inherit',
-                    fontWeight:
-                      statusItem.status_name === 'กำลังดำเนินการ' ||
-                      statusItem.status_name === 'ดำเนินการเสร็จสิ้น'
-                        ? 'bold'
-                        : 'inherit',
-                    '&:hover': {
-                      backgroundColor:
-                        statusItem.status_name === 'กำลังดำเนินการ'
-                          ? '#FFC107' // พื้นหลังสีเหลืองอ่อนตอน hover
-                          : statusItem.status_name === 'ดำเนินการเสร็จสิ้น'
-                            ? '#388E3C' // พื้นหลังสีเขียวเข้มตอน hover
-                            : 'inherit',
-                    },
-                    borderRadius: '4px', // ทำมุมมนให้ MenuItem
-                    margin: '4px 0', // เว้นระยะระหว่างรายการ
-                  }}
-                  onClick={() =>
+              {status?.map((statusItem) => {
+                const currentStatus = unreadableData?.status_name;
+
+                // กำหนดเงื่อนไขในการปิดการใช้งาน (disable)
+                const isDisabled =
+                  (currentStatus === 'รอดำเนินการ' && statusItem.statusName !== 'กำลังดำเนินการ') ||
+                  (currentStatus === 'กำลังดำเนินการ' &&
+                    statusItem.statusName !== 'ดำเนินการเสร็จสิ้น') ||
+                  currentStatus === 'ดำเนินการเสร็จสิ้น';
+
+                const handleClick = () => {
+                  // Only update if the status change is valid
+                  if (!isDisabled) {
                     handleInputChangeUpdate({
-                      target: { name: 'status', value: statusItem.status_name },
-                    })
+                      target: { name: 'status_name', value: statusItem.statusName },
+                    });
                   }
-                >
-                  {statusItem.status_name}
-                </MenuItem>
-              ))}
+                };
+
+                return (
+                  <MenuItem
+                    key={statusItem.statusId}
+                    value={statusItem.statusId}
+                    disabled={isDisabled}
+                    sx={{
+                      backgroundColor:
+                        statusItem.statusName === 'กำลังดำเนินการ'
+                          ? '#FFEB3B'
+                          : statusItem.statusName === 'ดำเนินการเสร็จสิ้น'
+                            ? '#4CAF50'
+                            : 'inherit',
+                      color:
+                        statusItem.statusName === 'กำลังดำเนินการ'
+                          ? '#FFA000'
+                          : statusItem.statusName === 'ดำเนินการเสร็จสิ้น'
+                            ? '#ffffff'
+                            : 'inherit',
+                      fontWeight:
+                        statusItem.statusName === 'กำลังดำเนินการ' ||
+                        statusItem.statusName === 'ดำเนินการเสร็จสิ้น'
+                          ? 'bold'
+                          : 'inherit',
+                      '&:hover': {
+                        backgroundColor:
+                          statusItem.statusName === 'กำลังดำเนินการ'
+                            ? '#FFC107'
+                            : statusItem.statusName === 'ดำเนินการเสร็จสิ้น'
+                              ? '#388E3C'
+                              : 'inherit',
+                      },
+                      borderRadius: '4px',
+                      margin: '4px 0',
+                    }}
+                    onClick={handleClick} // Call handleClick instead of directly calling handleInputChangeUpdate
+                  >
+                    {statusItem.statusName}
+                  </MenuItem>
+                );
+              })}
             </Select>
           </FormControl>
         </Grid>

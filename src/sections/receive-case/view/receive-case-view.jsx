@@ -52,8 +52,8 @@ export function ReceiveCaseView() {
       const teams = await get_team();
       setTeams(teams);
       const status = await get_status();
-      const parseJson = JSON.parse(status);
-      setStatus(parseJson.cases);
+
+      setStatus(status);
     } catch (error) {
       console.log('Error fetching data in allData:', error);
     }

@@ -6,6 +6,7 @@ import {
   Box,
   Card,
   Grid,
+  Chip,
   Modal,
   Button,
   Select,
@@ -16,6 +17,7 @@ import {
   InputLabel,
   CardContent,
   FormControl,
+  Autocomplete,
 } from '@mui/material';
 
 const AddCaseModal = ({
@@ -40,27 +42,33 @@ const AddCaseModal = ({
     <Box
       sx={{
         position: 'absolute',
-        top: '50%',
+        top: '45%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        width: '90%',
+        width: '150%',
         maxWidth: 1200,
+        maxHeight: 1200,
         bgcolor: 'background.paper',
         borderRadius: 2,
-        boxShadow: 24,
+        boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.2)',
         p: 4,
-        maxHeight: '90vh',
-        overflowY: 'auto', // Scroll if content overflows
+        overflowY: 'auto',
+        border: '3px solid rgba(0, 0, 0, 0.1)',
+        transition: 'all 0.3s ease-in-out',
+        '&:hover': {
+          boxShadow: '0px 10px 30px rgba(0, 0, 0, 0.25)',
+        },
       }}
     >
       <Typography variant="h4" gutterBottom>
-        แจ้ง Case
+       - แจ้งรายละเอียดข้อมูล Case
       </Typography>
       <Card>
         <CardContent>
-          <Typography variant="h6" gutterBottom>
+          {/* <Typography variant="h6" gutterBottom style={{ paddingTop: '-16px' }}>
             รายละเอียดข้อมูล Case
-          </Typography>
+          </Typography> */}
+
           <Grid container spacing={3}>
             {/* Section 1 */}
             <Grid item xs={12} md={8}>
@@ -74,54 +82,67 @@ const AddCaseModal = ({
                     onChange={handleInputChange}
                     label="สาเหตุหลัก"
                     variant="outlined"
-                    InputLabelProps={{
-                      shrink: true,
-                    }}
+                    InputLabelProps={{ shrink: true }}
                   >
-                    {/* Main Cases */}
-                    {Array.isArray(mainCases) &&
+                    {mainCases?.length > 0 ? (
                       mainCases.map((option) => (
-                        <MenuItem key={option.main_case_id} value={option.main_case_id}>
-                          {option.main_case_name}
+                        <MenuItem key={option.mainCaseId} value={option.mainCaseId}>
+                          {option.mainCaseName}
                         </MenuItem>
-                      ))}
+                      ))
+                    ) : (
+                      <MenuItem disabled>ไม่มีข้อมูล</MenuItem>
+                    )}
                   </TextField>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <TextField
-                    select
-                    fullWidth
-                    value={formData.sub_case_id || []}
-                    name="sub_case_id"
-                    onChange={(event) => {
-                      const { value } = event.target;
+                  <Autocomplete
+                    multiple
+                    options={subcasedata || []}
+                    getOptionLabel={(option) => option.subCaseName}
+                    value={
+                      subcasedata?.filter((option) =>
+                        formData.sub_case_id?.includes(option.subCaseId)
+                      ) || []
+                    }
+                    onChange={(_, newValue) => {
                       setFormData((prev) => ({
                         ...prev,
-                        sub_case_id: Array.isArray(value) ? value : value.split(','),
+                        sub_case_id: newValue.map((item) => item.subCaseId),
                       }));
                     }}
-                    label="สาเหตุย่อย"
-                    variant="outlined"
-                    InputLabelProps={{
-                      shrink: true,
-                    }}
-                    SelectProps={{
-                      multiple: true,
-                      renderValue: (selected) =>
-                        subcasedata
-                          .filter((option) => selected.includes(option.sub_case_id))
-                          .map((option) => option.sub_case_name)
-                          .join(', '),
-                    }}
-                  >
-                    {/* Sub Cases */}
-                    {subcasedata?.map((option) => (
-                      <MenuItem key={option.sub_case_id} value={option.sub_case_id}>
-                        <Checkbox checked={formData.sub_case_id?.includes(option.sub_case_id)} />
-                        {option.sub_case_name}
-                      </MenuItem>
-                    ))}
-                  </TextField>
+                    disableCloseOnSelect
+                    filterSelectedOptions
+                    renderOption={(props, option, { selected }) => (
+                      <li {...props} style={{ backgroundColor: selected ? '#d4edda' : 'inherit' }}>
+                        <Checkbox checked={selected} style={{ color: '#28a745' }} />
+                        {option.subCaseName}
+                      </li>
+                    )}
+                    renderTags={(selected, getTagProps) =>
+                      selected.map((option, index) => (
+                        <Chip
+                          key={option.subCaseId}
+                          label={option.subCaseName}
+                          {...getTagProps({ index })}
+                          style={{
+                            backgroundColor: '#28a745', // เปลี่ยนเป็นสีเขียว
+                            color: 'white', // เปลี่ยนสีตัวอักษรเป็นขาว
+                            borderRadius: '8px', // ให้ขอบมน
+                          }}
+                        />
+                      ))
+                    }
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="สาเหตุย่อย"
+                        variant="outlined"
+                        placeholder={formData.sub_case_id?.length ? '' : 'ค้นหาสาเหตุย่อย...'}
+                        InputLabelProps={{ shrink: true }}
+                      />
+                    )}
+                  />
                 </Grid>
 
                 <Grid item xs={12} md={6}>
@@ -140,28 +161,45 @@ const AddCaseModal = ({
                           sx: { maxHeight: 200, overflow: 'auto' },
                         },
                       }}
+                      // Set the color of the selected item
+                      sx={{
+                        color: levelurgent?.find(
+                          (option) => option.levelUrgentId === formData.urgent_level_id
+                        )
+                          ? levelurgent.find(
+                              (option) => option.levelUrgentId === formData.urgent_level_id
+                            ).levelUrgentName === 'เร่งด่วน'
+                            ? 'red'
+                            : levelurgent.find(
+                                  (option) => option.levelUrgentId === formData.urgent_level_id
+                                ).levelUrgentName === 'ปานกลาง'
+                              ? 'orange'
+                              : 'green'
+                          : 'inherit',
+                      }}
                     >
                       {/* Urgent Levels */}
                       {Array.isArray(levelurgent) &&
                         levelurgent.map((option) => (
                           <MenuItem
-                            key={option.level_urgent_id}
-                            value={option.level_urgent_id}
+                            key={option.levelUrgentId}
+                            value={option.levelUrgentId}
                             sx={{
                               color:
-                                option.level_urgent_name === 'เร่งด่วน'
+                                option.levelUrgentName === 'เร่งด่วน'
                                   ? 'red'
-                                  : option.level_urgent_name === 'ปานกลาง'
+                                  : option.levelUrgentName === 'ปานกลาง'
                                     ? 'orange'
                                     : 'green',
                             }}
                           >
-                            {option.level_urgent_name}
+                            {option.levelUrgentName}
                           </MenuItem>
                         ))}
                     </Select>
                   </FormControl>
                 </Grid>
+
                 <Grid item xs={12} md={6}>
                   <FormControl fullWidth>
                     <TextField
@@ -174,8 +212,8 @@ const AddCaseModal = ({
                       InputLabelProps={{ shrink: true }}
                     >
                       {employee?.map((option) => (
-                        <MenuItem key={option.employee_id} value={option.employee_id}>
-                          {option.employee_name}
+                        <MenuItem key={option.employeeId} value={option.employeeId}>
+                          {option.employeeName}
                         </MenuItem>
                       ))}
                     </TextField>
@@ -188,15 +226,15 @@ const AddCaseModal = ({
                       value={formData.team_id || ''}
                       name="team_id"
                       onChange={handleInputChange}
-                      label="ทีม"
+                      label="ทีมเเก้ไข หรือ ประสานงาน"
                       variant="outlined"
                       InputLabelProps={{
                         shrink: true,
                       }}
                     >
                       {team?.map((option) => (
-                        <MenuItem key={option.team_id} value={option.team_id}>
-                          {option.team_id} - {option.team_name}
+                        <MenuItem key={option.teamId} value={option.teamId}>
+                          {option.teamId} - {option.teamName}
                         </MenuItem>
                       ))}
                     </TextField>
@@ -245,25 +283,28 @@ const AddCaseModal = ({
             <Grid item xs={12} md={4}>
               <Grid container spacing={3} direction="column">
                 <Grid item xs={12} md={6}>
-                  <FormControl fullWidth variant="outlined">
-                    <TextField
-                      select
-                      value={formData.branch_id || ''}
-                      name="branch_id"
-                      onChange={handleInputChange}
-                      label="สาขา"
-                      InputLabelProps={{
-                        shrink: true,
-                      }}
-                    >
-                      {branchs?.map((option) => (
-                        <MenuItem key={option.branch_id} value={option.branch_id}>
-                          {option.branch_id} - {option.branch_name}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  </FormControl>
+                  <Autocomplete
+                    options={branchs || []}
+                    getOptionLabel={(option) => `${option.branchId} - ${option.branchName}`}
+                    value={branchs?.find((b) => b.branchId === formData.branch_id) || null}
+                    onChange={(_, newValue) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        branch_id: newValue ? newValue.branchId : '',
+                      }));
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="สาขา"
+                        variant="outlined"
+                        placeholder="ค้นหาสาขา..."
+                        InputLabelProps={{ shrink: true }}
+                      />
+                    )}
+                  />
                 </Grid>
+
                 <Grid item xs={12} md={6}>
                   <Box
                     display="flex"
