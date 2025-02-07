@@ -15,7 +15,7 @@ export function useGetReceivecase() {
     setIsLoading(true);
     setError(null);
 
-    const maxRetries = 2;
+    const maxRetries = 10;
     // eslint-disable-next-line no-plusplus
     for (let attempts = 0; attempts <= maxRetries; attempts++) {
       try {
@@ -24,7 +24,7 @@ export function useGetReceivecase() {
         // eslint-disable-next-line no-await-in-loop
         const response = await axiosInstance.get(url);
 
-        if (response.status === 200 && response.headers['content-type'].includes('application/json')) {
+        if (response.status === 200 && response.headers['content-type,'].includes('application/json')) {
           console.log('📌 API Data:', response.data);
           setRec(response.data);
           setIsLoading(false);
