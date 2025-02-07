@@ -641,12 +641,12 @@ const CaseDataGrid = ({
             variant="contained"
             size={isDense ? 'small' : 'medium'} // ขนาดเล็กลงใน Dense Mode
             sx={{
-              backgroundColor: '#4caf50',
+              backgroundColor: '#2cff43',
               color: 'black',
               padding: isDense ? '4px 8px' : '4px 8px', // Reduce padding in Dense Mode
               fontSize: isDense ? '0.75rem' : '1rem', // Adjust font size
               '&:hover': {
-                backgroundColor: '#45a049',
+                backgroundColor: '#00be00'
               },
             }}
             onClick={() => {
@@ -1057,7 +1057,7 @@ const CaseDataGrid = ({
             style={{
               height: '50px',
               borderRadius: '8px',
-              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+              backgroundColor: '#00d300',
               textTransform: 'none',
               fontWeight: '600',
               display: 'flex',
@@ -1083,7 +1083,7 @@ const CaseDataGrid = ({
             onClick={() => exportToExcelUTF8(rows, columns)}
             fullWidth
             style={{
-              backgroundColor: '#4caf50',
+              backgroundColor: '#2196F3',
               color: '#fff',
               textTransform: 'none',
               height: '50px',

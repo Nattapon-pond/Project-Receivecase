@@ -184,7 +184,7 @@ const Dashboard = () => {
         const trendResponse = await axiosInstance(
           `${baseURL}/receivecase/trend?start_date=${startDate}&end_date=${endDate}`
         );
-        const trendData = trendResponse?.data;
+        const trendData = trendResponse?.data?.result;
   
         // กรองข้อมูลตาม period ที่ตรงกับ age
         const periodMap = {
