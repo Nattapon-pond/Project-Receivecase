@@ -56,8 +56,8 @@ const TakeacitonModal = ({
             value={formDataUpdate?.start_date || ''}
             onChange={handleInputChangeUpdate}
             disabled={
-              formDataUpdate?.status_name === 'กำลังดำเนินการ' ||
-              formDataUpdate?.status_name === 'ดำเนินการเสร็จสิ้น'
+              unreadableData?.status_name === 'กำลังดำเนินการ' ||
+              unreadableData?.status_name === 'ดำเนินการเสร็จสิ้น'
             }
             inputProps={{
               step: 60,
