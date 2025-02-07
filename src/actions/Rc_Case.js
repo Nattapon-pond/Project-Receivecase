@@ -24,7 +24,7 @@ export function useGetReceivecase() {
         // eslint-disable-next-line no-await-in-loop
         const response = await axiosInstance.get(url);
 
-        if (response.status === 200 && response.headers['content-type,'].includes('application/json')) {
+        if (response.status === 200) {
           console.log('📌 API Data:', response.data);
           setRec(response.data);
           setIsLoading(false);
