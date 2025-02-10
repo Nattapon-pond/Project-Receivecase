@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import { DataGrid } from '@mui/x-data-grid';
 import { Box, Grid, Chip, TextField } from '@mui/material';
 
+import axiosInstance from 'src/utils/axios';
+
 import { CONFIG } from 'src/config-global';
 
 import { formatDateTime } from '../../../utils/dateUtils';
@@ -18,16 +20,17 @@ export default function CaseTable({ cases, totalPages, setCurrentPage }) {
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const response = await fetch(`${baseURL}/Employee/GetEmployeesall`);
-        
-        if (!response.ok) {
+        const response = await axiosInstance(`${baseURL}/Employee/GetEmployeesall`);
+        console.log(response)
+        console.log(response.data.result)
+        if (!response.status === 200) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
   
-        const data = await response.json();
+        const data = await response.data.result;
   
         if (data?.result && Array.isArray(data.result)) {
-          setEmployees(data.result);
+          setEmployees(data);
         } else {
           setEmployees([]); // Set empty array if data format is incorrect
         }
@@ -43,21 +46,30 @@ export default function CaseTable({ cases, totalPages, setCurrentPage }) {
   useEffect(() => {
     const fetchReceiveCase = async () => {
       try {
-        const response = await fetch(`${baseURL}/receivecase/getreceivecase`);
-        const data = await response.json();
-
-        if (data?.result && Array.isArray(data.result)) {
-          setReceiveCases(data.result);
+        const response = await axiosInstance(`${baseURL}/receivecase/getreceivecase`);
+        console.log("🔥 Full API Response:", response.data); // Debug ตรงนี้ก่อน
+        
+        if (response.status !== 200) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+  
+        const data = response.data.result; // ดึงข้อมูลจาก response
+        
+        if (data && Array.isArray(data)) {
+          console.log("✅ Processed Data:", data); // ตรวจสอบข้อมูลที่ set เข้า state
+          setReceiveCases(data);
         } else {
-          setReceiveCases([]);
+          console.error("❌ Data format is incorrect:", data);
+          setReceiveCases([]); // ตั้งค่าเป็น array ว่างหากรูปแบบผิด
         }
       } catch (error) {
         console.error('❌ Error fetching ReceiveCase:', error);
       }
     };
-
+  
     fetchReceiveCase();
   }, [baseURL]);
+  
 
   // กรองข้อมูลตามการค้นหาจากช่องเดียว
   const filteredReceiveCases = receiveCases.filter((caseItem) => (
@@ -174,15 +186,15 @@ export default function CaseTable({ cases, totalPages, setCurrentPage }) {
     },
     { field: 'problem', headerName: 'ปัญหา', width: 150 },
     {
-      field: 'saev_em',
+      field: 'saevEm',
       headerName: 'พนักงานเข้าดำเนินการ',
       width: 200,
       renderCell: (params) => {
-        const empId = params.row?.saev_em?.toString().trim();
-        const employee = employees.find((emp) => String(emp.employeeId).trim() === empId);
+        const empId = Number(params.row.saevEm); // แปลงเป็น number
+        const employee = employees.find((emp) => Number(emp.employeeId) === empId);
         return employee ? employee.employeeName : 'ไม่พบข้อมูล';
       },
-    },
+    },    
     { field: 'correct', headerName: 'แนวทางแก้ไข', width: 200 },
     { field: 'mainCaseName', headerName: 'ประเภทปัญหา', width: 180 },
     { field: 'teamName', headerName: 'ทีมที่รับผิดชอบ', width: 180 },
@@ -205,22 +217,23 @@ export default function CaseTable({ cases, totalPages, setCurrentPage }) {
       </Box>
 
       <DataGrid
-        rows={filteredReceiveCases.map((caseItem) => ({
-          id: caseItem.receiveCaseId,
-          receiveCaseId: caseItem.receiveCaseId,
-          branchName: caseItem.branch?.branchName || 'ไม่ระบุ',
-          createDate: caseItem.createDate,
-          startDate: caseItem.startDate,
-          endDate: caseItem.endDate,
-          statusName: caseItem.status?.statusName || 'ไม่ระบุ',
-          levelUrgentName: caseItem.urgentLevel?.levelUrgentName || 'ไม่ระบุ',
-          problem: caseItem.problem || 'ไม่ระบุ',
-          saev_em: caseItem.saevEm,
-          correct: caseItem.correct || 'ไม่ระบุ',
-          mainCaseName: caseItem.mainCase?.mainCaseName || 'ไม่ระบุ',
-          teamName: caseItem.team?.teamName || 'ไม่ระบุ',
-          employeeName: caseItem.employee?.employeeName || 'ไม่ระบุ',
-        }))}
+       rows={receiveCases?.map((caseItem) => ({
+        id: caseItem.receiveCaseId || 'N/A',
+        receiveCaseId: caseItem.receiveCaseId || 'N/A',
+        branchName: caseItem.branch?.branchName || 'ไม่ระบุ',
+        createDate: caseItem.createDate || 'ไม่ระบุ',
+        startDate: caseItem.startDate || 'ไม่ระบุ',
+        endDate: caseItem.endDate || 'ไม่ระบุ',
+        statusName: caseItem.status?.statusName || 'ไม่ระบุ',
+        levelUrgentName: caseItem.urgentLevel?.levelUrgentName || 'ไม่ระบุ',
+        problem: caseItem.problem || 'ไม่ระบุ',
+        saevEm: caseItem.saevEm || 'ไม่ระบุ',
+        correct: caseItem.correct || 'ไม่ระบุ',
+        mainCaseName: caseItem.mainCase?.mainCaseName || 'ไม่ระบุ',
+        teamName: caseItem.team?.teamName || 'ไม่ระบุ',
+        employeeName: caseItem.employee?.employeeName || 'ไม่ระบุ',
+      })) || []}
+      
         columns={columns}
         pageSize={10}
         paginationMode="server"
