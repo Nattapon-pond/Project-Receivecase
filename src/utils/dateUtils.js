@@ -4,7 +4,7 @@ export const formatDateTime = (dateString) => {
   const date = new Date(dateString);
   if (Number.isNaN(date.getTime())) {
     console.warn('Invalid Date:', dateString); // ✅ แจ้งเตือนถ้าข้อมูลผิดพลาด
-    return 'ข้อมูลผิดพลาด';
+    return 'ยังไม่มีข้อมูลการเข้าเดินการ';
   }
 
   // ✅ ปรับเวลาให้เป็น UTC+7

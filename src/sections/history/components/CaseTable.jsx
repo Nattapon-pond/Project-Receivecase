@@ -21,24 +21,14 @@ export default function CaseTable({ cases, totalPages, setCurrentPage }) {
     const fetchEmployees = async () => {
       try {
         const response = await axiosInstance(`${baseURL}/Employee/GetEmployeesall`);
-        console.log(response)
-        console.log(response.data.result)
-        if (!response.status === 200) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-  
-        const data = await response.data.result;
-  
-        if (data?.result && Array.isArray(data.result)) {
-          setEmployees(data);
-        } else {
-          setEmployees([]); // Set empty array if data format is incorrect
-        }
+        if (response.status !== 200) throw new Error(`HTTP error! Status: ${response.status}`);
+
+        const data = response.data.result;
+        setEmployees(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error('❌ Error fetching employees:', error);
       }
     };
-  
     fetchEmployees();
   }, [baseURL]);
 
@@ -135,21 +125,23 @@ export default function CaseTable({ cases, totalPages, setCurrentPage }) {
       renderCell: (params) => {
         const startDate = params.row?.startDate ? new Date(params.row.startDate) : null;
         const endDate = params.row?.endDate ? new Date(params.row.endDate) : null;
-
-        if (!startDate || !endDate) {
-          return 'ไม่ระบุ';
+    
+        // Check if either startDate or endDate is missing or invalid
+        // eslint-disable-next-line no-restricted-globals
+        if (!startDate || !endDate || isNaN(startDate) || isNaN(endDate)) {
+          return 'ยังดำเนินการไม่เสร็จ'; // Show "ยังดำเนินการไม่เสร็จ" if data is missing
         }
-
+    
         const timeDiff = endDate - startDate;
         if (timeDiff < 0) {
-          return 'ข้อมูลผิดพลาด';
+          return 'ข้อมูลผิดพลาด'; // Handle case where the dates are invalid
         }
-
+    
         const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
         const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-
-        return `${days} วัน ${hours} ชม. ${minutes} นาที`;
+    
+        return `${days} วัน ${hours} ชม. ${minutes} นาที`; // Display the calculated time difference
       },
     },
     {
@@ -186,13 +178,13 @@ export default function CaseTable({ cases, totalPages, setCurrentPage }) {
     },
     { field: 'problem', headerName: 'ปัญหา', width: 150 },
     {
-      field: 'saevEm',
+      field: 'saev_em',
       headerName: 'พนักงานเข้าดำเนินการ',
       width: 200,
       renderCell: (params) => {
-        const empId = Number(params.row.saevEm); // แปลงเป็น number
-        const employee = employees.find((emp) => Number(emp.employeeId) === empId);
-        return employee ? employee.employeeName : 'ไม่พบข้อมูล';
+        const empId = params.row?.saev_em?.toString().trim();
+        const employee = employees.find((emp) => String(emp.employeeId).trim() === empId);
+        return employee ? employee.employeeName : 'ยังไม่เข้าดำเดินการ';
       },
     },    
     { field: 'correct', headerName: 'แนวทางแก้ไข', width: 200 },
@@ -227,7 +219,7 @@ export default function CaseTable({ cases, totalPages, setCurrentPage }) {
         statusName: caseItem.status?.statusName || 'ไม่ระบุ',
         levelUrgentName: caseItem.urgentLevel?.levelUrgentName || 'ไม่ระบุ',
         problem: caseItem.problem || 'ไม่ระบุ',
-        saevEm: caseItem.saevEm || 'ไม่ระบุ',
+        saev_em: caseItem.saevEm,
         correct: caseItem.correct || 'ไม่ระบุ',
         mainCaseName: caseItem.mainCase?.mainCaseName || 'ไม่ระบุ',
         teamName: caseItem.team?.teamName || 'ไม่ระบุ',
