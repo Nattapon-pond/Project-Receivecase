@@ -11,7 +11,7 @@ import { formatDateTime } from '../../../utils/dateUtils';
 
 export default function CaseTable({ cases, totalPages, setCurrentPage }) {
   const [employees, setEmployees] = useState([]);
-  const [receiveCases, setReceiveCases] = useState([]); // เก็บข้อมูล receivecase
+  const [receiveCases, setReceiveCases] = useState([]); 
   const [search, setSearch] = useState('');
 
   const baseURL = CONFIG.site.serverUrl;
@@ -37,7 +37,7 @@ export default function CaseTable({ cases, totalPages, setCurrentPage }) {
     const fetchReceiveCase = async () => {
       try {
         const response = await axiosInstance(`${baseURL}/receivecase/getreceivecase`);
-        console.log("🔥 Full API Response:", response.data); // Debug ตรงนี้ก่อน
+        console.log("🔥 Full API Response:", response.data); 
         
         if (response.status !== 200) {
           throw new Error(`HTTP error! Status: ${response.status}`);

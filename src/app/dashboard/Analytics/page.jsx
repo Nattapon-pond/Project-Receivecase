@@ -1,5 +1,7 @@
-'use client';
+"use client";  
 
+// eslint-disable-next-line import/no-extraneous-dependencies
+import Chart from 'react-apexcharts';
 import React, { useState, useEffect } from 'react';
 
 import {
@@ -24,8 +26,6 @@ import axiosInstance from 'src/utils/axios';
 
 import { CONFIG } from 'src/config-global';
 
-import ChartComponent from './ChartComponent';
-
 const baseURL = CONFIG.site.serverUrl;
 
 const Dashboard = () => {
@@ -44,38 +44,15 @@ const Dashboard = () => {
     { category: 'รวม', count: 0 },
   ]);
   const [chartData, setChartData] = useState({ labels: [], datasets: [] });
-  const [chartOptions, setChartOptions] = useState({
-    responsive: true,
-    plugins: {
-      legend: { display: true },
-    },
-    scales: {
-      x: { beginAtZero: true },
-      y: {
-        beginAtZero: true,
-        grid: {
-          display: false, // Hide vertical grid lines
-        },
-      },
-    },
-    layout: {
-      padding: 20, // Add padding around the chart
-    },
-  });
-
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [startDate, setStartDate] = useState('2025-01-01');
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
 
-  // Add the missing 'age' state
-  const [age, setAge] = useState(''); // Add this line for age state
-
-  // Handle change for the age select
-  const handleChange = (event) => {
-    setAge(event.target.value); // This updates the selected age value
-  };
+  // State สำหรับ week
+  const [age, setAge] = useState('');  
+  const handleChange = (event) => setAge(event.target.value);
 
   useEffect(() => {
     if (!startDate || !endDate) {
@@ -105,19 +82,10 @@ const Dashboard = () => {
 
         const updatedData = [
           { category: 'โปรแกรม', count: Number(separateResponse?.data?.data?.total_program) || 0 },
-          {
-            category: 'ไฟฟ้า',
-            count: Number(separateResponse?.data?.data?.total_electricity) || 0,
-          },
-          {
-            category: 'เครื่องกล',
-            count: Number(separateResponse?.data?.data?.total_mechanical) || 0,
-          },
+          { category: 'ไฟฟ้า', count: Number(separateResponse?.data?.data?.total_electricity) || 0 },
+          { category: 'เครื่องกล', count: Number(separateResponse?.data?.data?.total_mechanical) || 0 },
           { category: 'บุคคล', count: Number(separateResponse?.data?.data?.total_person) || 0 },
-          {
-            category: 'ปัจจัยภายนอก',
-            count: Number(separateResponse?.data?.data?.total_other) || 0,
-          },
+          { category: 'ปัจจัยภายนอก', count: Number(separateResponse?.data?.data?.total_other) || 0 },
           { category: 'PLC', count: Number(separateResponse?.data?.data?.total_plc) || 0 },
           { category: 'รวม', count: Number(togetherResponse?.data?.data?.total_sub_case_id) || 0 },
         ];
@@ -125,7 +93,6 @@ const Dashboard = () => {
         setSubCaseData(updatedData);
 
         const chartResponse = await axiosInstance.get(chartUrl);
-
         const chartDataRaw = chartResponse?.data;
 
         const preparedChartData = {
@@ -134,82 +101,76 @@ const Dashboard = () => {
             : [],
           datasets: [
             {
-              label: 'โปรแกรม',
+              name: 'โปรแกรม',
               data: Array.isArray(chartDataRaw?.data)
                 ? chartDataRaw?.data?.map((item) => item?.total_program || 0)
                 : [],
-              backgroundColor: '#FFD700',
             },
             {
-              label: 'ไฟฟ้า',
+              name: 'ไฟฟ้า',
               data: Array.isArray(chartDataRaw?.data)
                 ? chartDataRaw?.data?.map((item) => item?.total_electricity || 0)
                 : [],
-              backgroundColor: '#90EE90',
             },
             {
-              label: 'เครื่องกล',
+              name: 'เครื่องกล',
               data: Array.isArray(chartDataRaw?.data)
                 ? chartDataRaw?.data?.map((item) => item?.total_mechanical || 0)
                 : [],
-              backgroundColor: '#FF6347',
             },
             {
-              label: 'บุคคล',
+              name: 'บุคคล',
               data: Array.isArray(chartDataRaw?.data)
                 ? chartDataRaw?.data?.map((item) => item?.total_person || 0)
                 : [],
-              backgroundColor: '#000080',
             },
             {
-              label: 'ปัจจัยภายนอก',
+              name: 'ปัจจัยภายนอก',
               data: Array.isArray(chartDataRaw?.data)
                 ? chartDataRaw?.data?.map((item) => item?.total_other || 0)
                 : [],
-              backgroundColor: '#00BFFF',
             },
             {
-              label: 'PLC',
+              name: 'PLC',
               data: Array.isArray(chartDataRaw?.data)
                 ? chartDataRaw?.data?.map((item) => item?.total_PLC || 0)
                 : [],
-              backgroundColor: '#8B4513',
+                color: '#996600'
             },
           ],
         };
 
         setChartData(preparedChartData);
 
-
-        const trendResponse = await axiosInstance(
+        // Fetch the trend data
+        const trendResponse = await axiosInstance.get(
           `${baseURL}/receivecase/trend?start_date=${startDate}&end_date=${endDate}`
         );
         const trendData = trendResponse?.data?.result;
-  
-        // กรองข้อมูลตาม period ที่ตรงกับ age
+
         const periodMap = {
           10: '1-7', // week1
           20: '8-14', // week2
           30: '15-21', // week3
-          40: '22-end', // week4 
+          40: '22-end', // week4
         };
-  
-        const selectedPeriod = periodMap[age]; // ค่าของ age จะถูกใช้เป็น key เพื่อดึง period ที่ต้องการ
-  
+
+        const selectedPeriod = periodMap[age];
+
         if (Array.isArray(trendData)) {
-          // กรอง trendData ตาม selectedPeriod ที่ได้จาก age
           const percentageChangeData = trendData?.filter(
             (item) => item?.period === selectedPeriod && item?.percentage_change !== 0
           )[0];
-  
+
           if (percentageChangeData) {
             console.log(percentageChangeData);
             setTrendPercent(percentageChangeData?.percentage_change || 0);
           } else {
             console.log("0");
-            setTrendPercent(0); // ถ้าไม่มีข้อมูลที่ตรงเงื่อนไข
+            setTrendPercent(0); // No data for the selected period
           }
         }
+
         setIsLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -218,47 +179,41 @@ const Dashboard = () => {
         setIsLoading(false);
       }
     };
-  
 
-    fetchData();
-  }, [startDate, endDate, lastMonthCases, currentMonthCases, totalCases,age]);
+    fetchData(); // Call the fetchData async function
+  }, [startDate, endDate, lastMonthCases, currentMonthCases, totalCases, age]);
+
+  // กำหนด options ของ ApexChart สำหรับกราฟแท่ง
+  const chartOptions = {
+    chart: {
+      type: 'bar',  // เปลี่ยนเป็น bar chart
+    },
+    xaxis: {
+      categories: chartData.labels,
+    },
+    dataLabels: {
+      enabled: false,
+    },
+    plotOptions: {
+      bar: {
+        horizontal: false,  // กำหนดให้เป็นกราฟแท่งแนวตั้ง
+        columnWidth: '50%', // ความกว้างของแท่ง
+        endingShape: 'flat',
+      },
+    },
+  };
 
   return (
     <Box sx={{ padding: 3 }}>
-      <Typography
-        variant="h5"
-        gutterBottom
-        align="center"
-        sx={{
-          border: '1px solid #66BB6A', // Green border
-          borderRadius: '8px', // Rounded corners
-          padding: '8px 16px', // Inner padding
-          backgroundColor: '#66BB6A', // Green background
-          color: 'white', // White text
-          fontWeight: 'bold', // Bold text
-        }}
-      >
+      <Typography variant="h5" gutterBottom align="center" sx={{ border: '1px solid #66BB6A', borderRadius: '8px', padding: '8px 16px', backgroundColor: '#66BB6A', color: 'white', fontWeight: 'bold' }}>
         Analytics
       </Typography>
 
       {isError && <Alert severity="error">{errorMessage}</Alert>}
 
       <Grid container spacing={3}>
-        {/* Case Category Table */}
         <Grid item xs={12} md={4}>
-          <Typography
-            variant="h5"
-            gutterBottom
-            align="center"
-            sx={{
-              border: '1px solid #66BB6A', // Green border
-              borderRadius: '8px', // Rounded corners
-              padding: '8px 16px', // Inner padding
-              backgroundColor: '#66BB6A', // Green background
-              color: 'white', // White text
-              fontWeight: 'bold', // Bold text
-            }}
-          >
+          <Typography variant="h5" gutterBottom align="center" sx={{ border: '1px solid #66BB6A', borderRadius: '8px', padding: '8px 16px', backgroundColor: '#66BB6A', color: 'white', fontWeight: 'bold' }}>
             Case Category
           </Typography>
           <Table>
@@ -266,7 +221,7 @@ const Dashboard = () => {
               <TableRow>
                 <TableCell>ประเภท</TableCell>
                 <TableCell>จำนวน</TableCell>
-              </TableRow> 
+              </TableRow>
             </TableHead>
             <TableBody>
               {subCaseData.map((row, index) => (
@@ -279,7 +234,6 @@ const Dashboard = () => {
           </Table>
         </Grid>
 
-        {/* Chart Section */}
         <Grid item xs={12} md={8}>
           <Box sx={{ border: '1px solid gray', padding: 2, height: '100%' }}>
             <Typography sx={{ marginTop: 2, textAlign: 'left' }}>จำนวนครั้ง</Typography>
@@ -287,13 +241,7 @@ const Dashboard = () => {
               <Grid item xs={12} sm={3}>
                 <FormControl fullWidth>
                   <InputLabel id="demo-simple-select-label">week</InputLabel>
-                  <Select
-                    labelId="demo-simple-select-label"
-                    id="demo-simple-select"
-                    value={age}
-                    label="Age"
-                    onChange={handleChange}
-                  >
+                  <Select labelId="demo-simple-select-label" id="demo-simple-select" value={age} label="Age" onChange={handleChange}>
                     <MenuItem value="">ไม่เลือก</MenuItem>
                     <MenuItem value={10}>week1</MenuItem>
                     <MenuItem value={20}>week2</MenuItem>
@@ -303,73 +251,59 @@ const Dashboard = () => {
                 </FormControl>
               </Grid>
               <Grid item xs={12} sm={3}>
-                <TextField
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  fullWidth
-                  variant="outlined"
-                />
+                <TextField type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} fullWidth variant="outlined" />
               </Grid>
               <Grid item xs={12} sm={3}>
-                <TextField
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  fullWidth
-                  variant="outlined"
-                />
+                <TextField type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} fullWidth variant="outlined" />
               </Grid>
             </Grid>
+
             {isLoading ? (
               <CircularProgress />
             ) : chartData.labels && chartData.labels.length > 0 && chartData.datasets.length > 0 ? (
-              <ChartComponent data={chartData} options={chartOptions} />
+              <Chart options={chartOptions} series={chartData.datasets} type="bar" height={350} />
             ) : (
-              <Typography align="center">No chart data available</Typography>
+              <Typography align="center" color="textSecondary" variant="body2">
+                No Data Available
+              </Typography>
             )}
           </Box>
         </Grid>
-      </Grid>
 
-      {/* Trend Section */}
-      <Grid item xs={12}> 
-        <Typography
-          variant="h6"
-          align="center"
-          sx={{
-            borderRadius: '8px',
-            bgcolor: trendPercent !== undefined && trendPercent < 0 ? '#006633' : '#FF0000',
-            color: '#FFFFFF',
-            padding: 1,
-            marginTop: 1,
-          }}
-        >
-          {isLoading
-            ? 'กำลังโหลดข้อมูล...'
-            : trendPercent !== undefined
-            ? trendPercent < 0
-              ? 'แนวโน้มลดลง'
-              : 'แนวโน้มเพิ่มขึ้น'
-            : 'ไม่มีข้อมูล'}
-        </Typography>
+        {/* ไม่ลบโค้ดนี้ */}
+        <Grid item xs={12}>
+          <Typography
+            variant="h6"
+            align="center"
+            sx={{
+              borderRadius: '8px',
+              bgcolor: trendPercent < 0 ? '#006633' : '#FF0000',
+              color: '#FFFFFF',
+              padding: 1,
+              marginTop: 1,
+            }}
+          >
+            {isLoading ? 'กำลังโหลดข้อมูล...' : trendPercent < 0 ? 'แนวโน้มลดลง' : 'แนวโน้มเพิ่มขึ้น'}
+          </Typography>
 
-        <Typography
-          variant="h4"
-          align="center"
-          color={trendPercent !== undefined && trendPercent < 0 ? '#006633' : '#FF0000'}
-        >
-          {isLoading ? (
-            <CircularProgress size={24} />
-          ) : trendPercent !== undefined ? (
-            `${Math.abs(trendPercent).toFixed(1)}%`
-          ) : (
-            'N/A'
-          )}
-        </Typography>
+          <Typography
+            variant="h4"
+            align="center"
+            color={trendPercent !== undefined && trendPercent < 0 ? '#006633' : '#FF0000'}
+          >
+            {isLoading ? (
+              <CircularProgress size={24} />
+            ) : trendPercent !== undefined ? (
+              `${Math.abs(trendPercent).toFixed(1)}%`
+            ) : (
+              'N/A'
+            )}
+          </Typography>
+        </Grid>
       </Grid>
     </Box>
   );
 };
 
 export default Dashboard;
+ 
