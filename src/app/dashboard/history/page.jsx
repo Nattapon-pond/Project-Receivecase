@@ -2,8 +2,6 @@ import { CONFIG } from 'src/config-global';
 
 import { HistoryView } from 'src/sections/history';
 
-
-
 // ----------------------------------------------------------------------
 
 export const metadata = { title: `Dashboard - ${CONFIG.site.name}` };
